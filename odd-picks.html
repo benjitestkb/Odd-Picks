@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odd Picks</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f232c; --line:#2a2f3a; --txt:#e8eaef; --mut:#8b93a3;
+    --acc:#3b82f6; --win:#22c55e; --loss:#ef4444; --push:#eab308;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:15px}
+  header{position:sticky;top:0;z-index:5;background:#0b0d11ee;backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .wrap{max-width:900px;margin:0 auto;padding:0 14px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:10px;flex-wrap:wrap}
+  .brand{font-weight:800;font-size:18px}
+  .bank{display:flex;gap:14px;font-size:13px;color:var(--mut)}
+  .bank b{color:var(--txt);font-size:15px}
+  nav{display:flex;gap:4px;padding-bottom:8px}
+  nav button{background:none;border:0;color:var(--mut);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
+  nav button.on{background:var(--card2);color:var(--txt)}
+  main{padding:16px 0 120px}
+  .datebar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
+  .datebar button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px}
+  .datebar input{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:14px}
+  .game{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .ghead{display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin-bottom:8px}
+  .live{color:var(--loss);font-weight:700}
+  .row{display:grid;grid-template-columns:1fr auto 120px;align-items:center;gap:10px;padding:6px 0}
+  .team{display:flex;align-items:center;gap:10px;min-width:0}
+  .team img{width:28px;height:28px;object-fit:contain}
+  .team .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .team .rec{color:var(--mut);font-size:12px}
+  .score{font-weight:800;font-size:18px;min-width:30px;text-align:center}
+  .odd{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 6px;cursor:pointer;text-align:center;font-variant-numeric:tabular-nums;line-height:1.2}
+    .odd,.ltr,.num,.stat .v,.bank b,.daygrp span:last-child,td.pos,td.neg{direction:ltr;unicode-bidi:isolate}
+  .stat .v{text-align:right}
+  .odd small{display:block;color:var(--mut);font-size:12px}
+  .odd:hover:not(:disabled){border-color:var(--acc)}
+  .odd.sel{background:var(--acc);border-color:var(--acc)}
+  .odd.sel small{color:#dbe6ff}
+  .odd.mine{outline:2px solid var(--win);outline-offset:1px}
+  .odd:disabled{cursor:not-allowed;opacity:.45}
+  .nolines{color:var(--mut);font-size:12px;text-align:center}
+  .prov{color:var(--mut);font-size:11px;margin-top:4px}
+  .msg{color:var(--mut);text-align:center;padding:30px 0}
+  .err{color:var(--loss)}
+  /* slip */
+  #slip{position:fixed;bottom:0;left:0;right:0;background:#12151bf5;border-top:1px solid var(--line);display:none;z-index:10}
+  #slip.show{display:block}
+  #slip .wrap{display:flex;align-items:center;gap:12px;padding:12px 14px;flex-wrap:wrap}
+  #slip .desc{flex:1;min-width:200px}
+  #slip .desc b{display:block}
+  #slip input{width:80px;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px;font-size:15px;text-align:center}
+  .btn{background:var(--acc);border:0;color:#fff;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn.ghost{background:var(--card2);border:1px solid var(--line);color:var(--txt)}
+  .btn.danger{background:none;border:1px solid var(--line);color:var(--loss);padding:5px 10px;font-weight:600;font-size:12px}
+  /* picks */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+  th{color:var(--mut);font-weight:600;font-size:12px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  .t-win{background:#22c55e22;color:var(--win)} .t-loss{background:#ef444422;color:var(--loss)}
+  .t-push{background:#eab30822;color:var(--push)} .t-pending{background:#8b93a322;color:var(--mut)}
+  .pos{color:var(--win)} .neg{color:var(--loss)}
+  .daygrp{margin:18px 0 6px;color:var(--mut);font-weight:700;font-size:13px;display:flex;justify-content:space-between}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat .l{color:var(--mut);font-size:12px} .stat .v{font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .card h3{margin:0 0 12px;font-size:15px}
+  .field{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .field label{width:160px;color:var(--mut);font-size:13px}
+  .field input{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px;width:120px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .hidden{display:none}
+  .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:20;font-size:14px}
+  @media (max-width:560px){ .row{grid-template-columns:1fr auto 100px} .field label{width:120px} .hide-sm{display:none} }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">🏀 Odd Picks</div>
+      <div class="bank">
+        <span>יתרה <b id="hBank">0</b></span>
+        <span>רווח/הפסד <b id="hPL">0</b></span>
+        <span>מאזן <b id="hRec">0-0-0</b></span>
+      </div>
+    </div>
+    <nav>
+      <button data-tab="games" class="on">משחקים</button>
+      <button data-tab="picks">הבחירות שלי</button>
+      <button data-tab="stats">סטטיסטיקה</button>
+      <button data-tab="settings">הגדרות</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="tab-games">
+    <div class="datebar">
+      <button id="prevDay">→</button>
+      <input type="date" id="datePick">
+      <button id="nextDay">←</button>
+      <button id="todayBtn">היום</button>
+      <button id="refreshBtn" title="רענון">⟳</button>
+    </div>
+    <div id="games"></div>
+  </section>
+
+  <section id="tab-picks" class="hidden"><div id="picks"></div></section>
+  <section id="tab-stats" class="hidden"><div id="stats"></div></section>
+
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <h3>קופה וירטואלית</h3>
+      <div class="field"><label>קופה התחלתית (יחידות)</label><input type="number" id="sBank" min="0" step="1"></div>
+      <div class="field"><label>הימור ברירת מחדל</label><input type="number" id="sStake" min="0.1" step="0.1"></div>
+      <button class="btn" id="saveSettings">שמור</button>
+    </div>
+    <div class="card">
+      <h3>גיבוי</h3>
+      <p style="color:var(--mut);font-size:13px;margin-top:0">הנתונים נשמרים בדפדפן הזה בלבד. ייצא קובץ גיבוי מדי פעם, או כדי להעביר למכשיר אחר.</p>
+      <div class="actions">
+        <button class="btn ghost" id="exportJson">ייצוא JSON</button>
+        <button class="btn ghost" id="exportCsv">ייצוא CSV</button>
+        <button class="btn ghost" id="importBtn">ייבוא JSON</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+        <button class="btn danger" id="resetAll">מחיקת כל הנתונים</button>
+      </div>
+    </div>
+    <p style="color:var(--mut);font-size:12px">מקור נתונים: ESPN (פיד ציבורי). יחסים אמריקאיים מומרים לעשרוניים. כשאין יחס לספרד מוצג 1.91 כברירת מחדל ומסומן *.</p>
+  </section>
+</main>
+
+<div id="slip">
+  <div class="wrap">
+    <div class="desc"><b id="slipTitle" class="ltr" style="text-align:right"></b><span id="slipSub" style="color:var(--mut);font-size:13px"></span></div>
+    <label style="color:var(--mut);font-size:13px">סכום <input type="number" id="slipStake" min="0.1" step="0.1"></label>
+    <span style="font-size:13px;color:var(--mut)">זכייה אפשרית: <b id="slipWin" style="color:var(--txt)">0</b></span>
+    <button class="btn" id="slipSave">שמור בחירה</button>
+    <button class="btn ghost" id="slipCancel">ביטול</button>
+  </div>
+</div>
+
+<script>
+/* ===================== storage ===================== */
+const KEY = 'nbaPicks.v1';
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ toast('שמירה נכשלה: '+e.message); } }
+const defaults = { settings:{ bankroll:1000, stake:1 }, picks:[] };
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || structuredClone(defaults); }
+catch(e){ state = structuredClone(defaults); }
+state.settings = Object.assign({}, defaults.settings, state.settings||{});
+state.picks = state.picks || [];
+// one-time: raise starting bankroll to 1000
+if(!state.settings.bank1000){ state.settings.bankroll = 1000; state.settings.bank1000 = true; save(); }
+
+/* ===================== utils ===================== */
+const $ = s => document.querySelector(s);
+const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+const r2 = n => Math.round(n*100)/100;
+const fmtU = n => (n>0?'+':'') + r2(n).toFixed(2);
+const fmtLine = n => n===0 ? 'PK' : (n>0?'+':'') + n;
+function num(v){
+  if(v==null) return null;
+  if(typeof v==='number') return isFinite(v)?v:null;
+  const s=String(v).trim().toUpperCase();
+  if(s==='EVEN'||s==='EV') return 100;
+  if(s==='PK'||s==='PICK') return 0;
+  const n=parseFloat(s.replace(/[^\d.+-]/g,''));
+  return isFinite(n)?n:null;
+}
+function amToDec(a){
+  if(a==null || a===0) return null;
+  return r2(a>0 ? 1+a/100 : 1+100/Math.abs(a));
+}
+function ymd(d){ return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
+function isoDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseIso(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+// NBA "game day" = US Eastern date. Default to current Eastern date.
+function easternToday(){
+  const p = new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  return parseIso(p);
+}
+const tf = new Intl.DateTimeFormat('he-IL',{weekday:'short',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});
+function toast(t){ const el=document.createElement('div'); el.className='toast'; el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),2500); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ===================== ESPN parsing ===================== */
+async function fetchDay(yyyymmdd){
+  const r = await fetch(`${ESPN}?dates=${yyyymmdd}&_=${Date.now()}`);
+  if(!r.ok) throw new Error('ESPN '+r.status);
+  const j = await r.json();
+  return (j.events||[]).map(e=>parseEvent(e, yyyymmdd));
+}
+function parseEvent(e, day){
+  const c = e.competitions[0];
+  const side = ha => {
+    const t = c.competitors.find(x=>x.homeAway===ha);
+    return {
+      id:t.team.id, abbr:t.team.abbreviation, name:t.team.shortDisplayName||t.team.displayName,
+      logo:t.team.logo, score: t.score!=null && t.score!=='' ? Number(t.score) : null,
+      rec:(t.records||[])[0]?.summary||''
+    };
+  };
+  const home=side('home'), away=side('away');
+  const st = c.status?.type || e.status?.type || {};
+  return {
+    id:e.id, day, date:e.date, home, away,
+    state: st.state || 'pre', completed: !!st.completed, statusText: st.shortDetail || st.detail || '',
+    spread: parseSpread(c, home, away)
+  };
+}
+function parseSpread(c, home, away){
+  const o = (c.odds||[])[0]; if(!o) return null;
+  let hL=null,aL=null,hO=null,aO=null;
+  const ps = o.pointSpread;
+  if(ps){
+    const best = x => [x?.current, x?.close, x?.open].find(v => v && v.line!=null);
+    const h = best(ps.home), a = best(ps.away);
+    hL=num(h?.line); aL=num(a?.line); hO=num(h?.odds); aO=num(a?.odds);
+  }
+  if(hL==null && o.details){
+    const m = String(o.details).trim().match(/^([A-Z]{2,4})\s+([+-]?\d+(\.\d+)?)$/i);
+    if(m){ const n=Math.abs(parseFloat(m[2])); hL = m[1].toUpperCase()===home.abbr.toUpperCase() ? -n : n; }
+    else if(/^(EVEN|PK|PICK)/i.test(o.details)) hL=0;
+  }
+  if(hL==null && typeof o.spread==='number') hL=o.spread;
+  if(hL==null) return null;
+  if(aL==null) aL=-hL;
+  if(hO==null) hO=num(o.homeTeamOdds?.spreadOdds);
+  if(aO==null) aO=num(o.awayTeamOdds?.spreadOdds);
+  const hD=amToDec(hO), aD=amToDec(aO);
+  return {
+    provider: o.provider?.name || '',
+    home:{line:hL, dec:hD??1.91, est:hD==null},
+    away:{line:aL, dec:aD??1.91, est:aD==null}
+  };
+}
+
+/* ===================== settlement ===================== */
+function settle(p, g){
+  if(!g.completed || g.home.score==null || g.away.score==null) return false;
+  const mine = p.side==='home'?g.home.score:g.away.score;
+  const opp  = p.side==='home'?g.away.score:g.home.score;
+  const m = mine + p.line - opp;
+  p.result = m>0?'win':m<0?'loss':'push';
+  p.pl = p.result==='win' ? r2(p.stake*(p.odds-1)) : p.result==='loss' ? -p.stake : 0;
+  p.final = `${g.away.abbr} ${g.away.score} - ${g.home.score} ${g.home.abbr}`;
+  return true;
+}
+async function settlePending(){
+  const days = [...new Set(state.picks.filter(p=>p.result==='pending').map(p=>p.day))];
+  let changed=false;
+  for(const d of days){
+    try{
+      const games = await fetchDay(d);
+      for(const p of state.picks.filter(p=>p.result==='pending'&&p.day===d)){
+        const g = games.find(x=>x.id===p.gameId);
+        if(g && settle(p,g)) changed=true;
+      }
+    }catch(e){ /* try again later */ }
+  }
+  if(changed){ save(); renderAll(); }
+}
+
+/* ===================== stats ===================== */
+function summary(){
+  const s={w:0,l:0,p:0,pend:0,pl:0,staked:0,pendStake:0};
+  for(const p of state.picks){
+    if(p.result==='win')s.w++; else if(p.result==='loss')s.l++; else if(p.result==='push')s.p++; else {s.pend++; s.pendStake+=p.stake;}
+    if(p.result!=='pending'){ s.pl+=p.pl; s.staked+=p.stake; }
+  }
+  s.bank = r2(state.settings.bankroll + s.pl - s.pendStake);
+  s.roi = s.staked ? s.pl/s.staked*100 : 0;
+  s.hit = (s.w+s.l) ? s.w/(s.w+s.l)*100 : 0;
+  return s;
+}
+function renderHeader(){
+  const s=summary();
+  $('#hBank').textContent = r2(s.bank).toFixed(2);
+  const pl=$('#hPL'); pl.textContent = fmtU(s.pl); pl.className = s.pl>0?'pos':s.pl<0?'neg':'';
+  $('#hRec').textContent = `${s.w}-${s.l}-${s.p}`;
+}
+
+/* ===================== games tab ===================== */
+let curDate = easternToday();
+let curGames = [];
+let sel = null; // {game, side}
+
+async function loadGames(silent){
+  $('#datePick').value = isoDate(curDate);
+  const box=$('#games'); if(!silent) box.innerHTML='<div class="msg">טוען…</div>';
+  try{
+    curGames = await fetchDay(ymd(curDate));
+    // settle any picks from this day while we have the data
+    let ch=false;
+    for(const p of state.picks.filter(p=>p.result==='pending')){
+      const g=curGames.find(x=>x.id===p.gameId); if(g&&settle(p,g)) ch=true;
+    }
+    if(ch){ save(); renderAll(); }
+    renderGames();
+  }catch(e){
+    box.innerHTML = `<div class="msg err">שגיאה בטעינת הנתונים מ-ESPN (${esc(e.message)}).<br>בדוק חיבור ונסה ⟳.<br><br>אם פתחת את הקובץ בתצוגה המקדימה של Claude – היא חוסמת גישה לאינטרנט. הורד את הקובץ ופתח אותו ב-Chrome, או העלה ל-GitHub Pages.<br>חוסם פרסומות שחוסם את espn.com יגרום לאותה שגיאה.</div>`;
+  }
+}
+function pickFor(gameId){ return state.picks.find(p=>p.gameId===gameId); }
+function oddBtn(g, sideKey){
+  const sp=g.spread?.[sideKey]; if(!sp) return '<div class="nolines">אין ליין</div>';
+  const started = g.state!=='pre' || new Date(g.date)<=new Date();
+  const mine = pickFor(g.id);
+  const isSel = sel && sel.game.id===g.id && sel.side===sideKey;
+  const cls = ['odd', isSel?'sel':'', mine&&mine.side===sideKey?'mine':''].join(' ');
+  const dis = started || mine ? 'disabled' : '';
+  return `<button class="${cls}" ${dis} data-g="${g.id}" data-s="${sideKey}">${fmtLine(sp.line)}<small>${sp.dec.toFixed(2)}${sp.est?'*':''}</small></button>`;
+}
+function renderGames(){
+  const box=$('#games');
+  if(!curGames.length){ box.innerHTML='<div class="msg">אין משחקים בתאריך הזה.</div>'; return; }
+  const sorted=[...curGames].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  box.innerHTML = sorted.map(g=>{
+    const showScore = g.state!=='pre';
+    const st = g.state==='in' ? `<span class="live">● ${esc(g.statusText)}</span>` : g.state==='post' ? esc(g.statusText) : tf.format(new Date(g.date));
+    const mine=pickFor(g.id);
+    const mineTxt = mine ? ` · הבחירה שלך: <span class="ltr">${esc(mine.team)} ${fmtLine(mine.line)} @ ${mine.odds.toFixed(2)} (${mine.stake}u)</span>` : '';
+    const row = (t,k)=>`<div class="row">
+        <div class="team"><img src="${esc(t.logo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><div style="min-width:0"><div class="nm">${esc(t.name)}</div><div class="rec">${esc(t.rec)}</div></div></div>
+        <div class="score">${showScore&&t.score!=null?t.score:''}</div>
+        ${oddBtn(g,k)}
+      </div>`;
+    return `<div class="game">
+      <div class="ghead"><span>${st}</span><span>${mineTxt}</span></div>
+      ${row(g.away,'away')}${row(g.home,'home')}
+      ${g.spread?.provider?`<div class="prov">ספרד · ${esc(g.spread.provider)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+$('#games').addEventListener('click',e=>{
+  const b=e.target.closest('.odd'); if(!b||b.disabled) return;
+  const g=curGames.find(x=>x.id===b.dataset.g); const side=b.dataset.s;
+  if(sel && sel.game.id===g.id && sel.side===side){ sel=null; } else { sel={game:g, side}; }
+  renderGames(); renderSlip();
+});
+
+/* ===================== slip ===================== */
+function renderSlip(){
+  const el=$('#slip');
+  if(!sel){ el.classList.remove('show'); return; }
+  const g=sel.game, t=g[sel.side], sp=g.spread[sel.side];
+  $('#slipTitle').textContent = `${t.name} ${fmtLine(sp.line)} @ ${sp.dec.toFixed(2)}`;
+  $('#slipSub').textContent = `${g.away.abbr} @ ${g.home.abbr} · ${tf.format(new Date(g.date))}`;
+  if(!$('#slipStake').value) $('#slipStake').value = state.settings.stake;
+  updWin(); el.classList.add('show');
+}
+function updWin(){
+  if(!sel) return;
+  const st=parseFloat($('#slipStake').value)||0;
+  $('#slipWin').textContent = r2(st*(sel.game.spread[sel.side].dec-1)).toFixed(2);
+}
+$('#slipStake').addEventListener('input',updWin);
+$('#slipCancel').onclick=()=>{ sel=null; renderGames(); renderSlip(); };
+$('#slipSave').onclick=()=>{
+  const g=sel.game, side=sel.side, sp=g.spread[side], t=g[side], o=g[side==='home'?'away':'home'];
+  const stake=parseFloat($('#slipStake').value);
+  if(!(stake>0)){ toast('סכום לא תקין'); return; }
+  if(new Date(g.date)<=new Date()){ toast('המשחק כבר התחיל'); return; }
+  if(pickFor(g.id)){ toast('כבר יש בחירה במשחק הזה'); return; }
+  state.picks.push({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    gameId:g.id, day:g.day, gameDate:g.date, createdAt:new Date().toISOString(),
+    matchup:`${g.away.abbr} @ ${g.home.abbr}`, side, team:t.name, teamAbbr:t.abbr, opp:o.abbr,
+    line:sp.line, odds:sp.dec, oddsEstimated:sp.est, provider:g.spread.provider,
+    stake, result:'pending', pl:0
+  });
+  save(); sel=null; renderGames(); renderSlip(); renderAll(); toast('הבחירה נשמרה ✓');
+};
+
+/* ===================== picks tab ===================== */
+const resTag = r => ({win:'<span class="tag t-win">זכייה</span>',loss:'<span class="tag t-loss">הפסד</span>',push:'<span class="tag t-push">פוש</span>',pending:'<span class="tag t-pending">פתוח</span>'}[r]);
+function renderPicks(){
+  const box=$('#picks');
+  if(!state.picks.length){ box.innerHTML='<div class="msg">עוד אין בחירות. בחר ספרד בלשונית "משחקים".</div>'; return; }
+  const byDay={};
+  for(const p of state.picks) (byDay[p.day]=byDay[p.day]||[]).push(p);
+  const days=Object.keys(byDay).sort().reverse();
+  box.innerHTML = days.map(d=>{
+    const ps=byDay[d].sort((a,b)=>new Date(a.gameDate)-new Date(b.gameDate));
+    const dpl=ps.reduce((s,p)=>s+(p.result!=='pending'?p.pl:0),0);
+    const dd=`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`;
+    return `<div class="daygrp"><span>${dd}</span><span class="${dpl>0?'pos':dpl<0?'neg':''}">${fmtU(dpl)}u</span></div>
+    <table><thead><tr><th>משחק</th><th>בחירה</th><th>יחס</th><th>סכום</th><th class="hide-sm">תוצאה סופית</th><th>סטטוס</th><th>P/L</th><th></th></tr></thead><tbody>
+    ${ps.map(p=>{
+      const canDel = p.result==='pending' && new Date(p.gameDate)>new Date();
+      return `<tr>
+        <td class="ltr" style="text-align:right">${esc(p.matchup)}</td>
+        <td><b class="ltr">${esc(p.teamAbbr)} ${fmtLine(p.line)}</b></td>
+        <td>${p.odds.toFixed(2)}${p.oddsEstimated?'*':''}</td>
+        <td>${p.stake}</td>
+        <td class="hide-sm ltr" style="color:var(--mut);text-align:right">${esc(p.final||'')}</td>
+        <td>${resTag(p.result)}</td>
+        <td class="${p.pl>0?'pos':p.pl<0?'neg':''}">${p.result==='pending'?'':fmtU(p.pl)}</td>
+        <td>${canDel?`<button class="btn danger" data-del="${p.id}">בטל</button>`:''}</td>
+      </tr>`;}).join('')}
+    </tbody></table>`;
+  }).join('');
+}
+$('#picks').addEventListener('click',e=>{
+  const id=e.target.dataset?.del; if(!id) return;
+  const p=state.picks.find(x=>x.id===id);
+  if(!p || new Date(p.gameDate)<=new Date()){ toast('לא ניתן לבטל אחרי תחילת המשחק'); return; }
+  state.picks=state.picks.filter(x=>x.id!==id); save(); renderAll(); if(curGames.length) renderGames();
+});
+
+/* ===================== stats tab ===================== */
+function renderStats(){
+  const s=summary();
+  const settled=state.picks.filter(p=>p.result!=='pending').sort((a,b)=>new Date(a.gameDate)-new Date(b.gameDate));
+  // per-team
+  const teams={};
+  for(const p of settled){ const t=teams[p.teamAbbr]=teams[p.teamAbbr]||{w:0,l:0,p:0,pl:0}; t[p.result[0]]++; t.pl+=p.pl; }
+  // streak
+  let streak='—'; const wl=settled.filter(p=>p.result!=='push');
+  if(wl.length){ const last=wl[wl.length-1].result; let n=0; for(let i=wl.length-1;i>=0&&wl[i].result===last;i--)n++; streak=(last==='win'?'W':'L')+n; }
+  // fav vs dog
+  const fav=settled.filter(p=>p.line<0), dog=settled.filter(p=>p.line>0);
+  const rec=a=>`${a.filter(p=>p.result==='win').length}-${a.filter(p=>p.result==='loss').length}-${a.filter(p=>p.result==='push').length}`;
+  const plOf=a=>a.reduce((x,p)=>x+p.pl,0);
+  $('#stats').innerHTML = `
+  <div class="stats">
+    <div class="stat"><div class="l">יתרה נוכחית</div><div class="v">${s.bank.toFixed(2)}</div></div>
+    <div class="stat"><div class="l">רווח/הפסד (יחידות)</div><div class="v ${s.pl>0?'pos':s.pl<0?'neg':''}">${fmtU(s.pl)}</div></div>
+    <div class="stat"><div class="l">ROI</div><div class="v ${s.roi>0?'pos':s.roi<0?'neg':''}">${s.roi.toFixed(1)}%</div></div>
+    <div class="stat"><div class="l">אחוז הצלחה</div><div class="v">${s.hit.toFixed(1)}%</div></div>
+    <div class="stat"><div class="l">מאזן (נ-ה-פ)</div><div class="v">${s.w}-${s.l}-${s.p}</div></div>
+    <div class="stat"><div class="l">רצף</div><div class="v">${streak}</div></div>
+    <div class="stat"><div class="l">פתוחים</div><div class="v">${s.pend}</div></div>
+    <div class="stat"><div class="l">סה"כ הושקע</div><div class="v">${r2(s.staked).toFixed(2)}</div></div>
+  </div>
+  <div class="card"><h3>פייבוריט מול אנדרדוג</h3>
+    <table><thead><tr><th></th><th>מאזן</th><th>P/L</th></tr></thead><tbody>
+      <tr><td>פייבוריט (ליין שלילי)</td><td class="num">${rec(fav)}</td><td class="${plOf(fav)>0?'pos':plOf(fav)<0?'neg':''}">${fmtU(plOf(fav))}</td></tr>
+      <tr><td>אנדרדוג (ליין חיובי)</td><td class="num">${rec(dog)}</td><td class="${plOf(dog)>0?'pos':plOf(dog)<0?'neg':''}">${fmtU(plOf(dog))}</td></tr>
+    </tbody></table></div>
+  <div class="card"><h3>לפי קבוצה שבחרת</h3>
+    ${Object.keys(teams).length?`<table><thead><tr><th>קבוצה</th><th>מאזן</th><th>P/L</th></tr></thead><tbody>
+    ${Object.entries(teams).sort((a,b)=>b[1].pl-a[1].pl).map(([k,t])=>`<tr><td>${esc(k)}</td><td class="num">${t.w}-${t.l}-${t.p}</td><td class="${t.pl>0?'pos':t.pl<0?'neg':''}">${fmtU(t.pl)}</td></tr>`).join('')}
+    </tbody></table>`:'<div style="color:var(--mut)">אין עדיין הימורים שהוכרעו.</div>'}
+  </div>`;
+}
+
+/* ===================== settings / backup ===================== */
+function loadSettingsForm(){ $('#sBank').value=state.settings.bankroll; $('#sStake').value=state.settings.stake; }
+$('#saveSettings').onclick=()=>{
+  const b=parseFloat($('#sBank').value), s=parseFloat($('#sStake').value);
+  if(!(b>=0)||!(s>0)){ toast('ערכים לא תקינים'); return; }
+  state.settings.bankroll=b; state.settings.stake=s; save(); renderAll(); toast('נשמר');
+};
+function download(name, text, type){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#exportJson').onclick=()=>download(`odd-picks-${isoDate(new Date())}.json`, JSON.stringify(state,null,2),'application/json');
+$('#exportCsv').onclick=()=>{
+  const cols=['day','gameDate','matchup','teamAbbr','line','odds','stake','result','pl','final','provider'];
+  const csv=[cols.join(',')].concat(state.picks.map(p=>cols.map(c=>`"${String(p[c]??'').replace(/"/g,'""')}"`).join(','))).join('\n');
+  download(`odd-picks-${isoDate(new Date())}.csv`, '﻿'+csv,'text/csv');
+};
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.picks)) throw new Error('קובץ לא תקין');
+    if(!confirm(`לייבא ${d.picks.length} בחירות? הנתונים הנוכחיים יוחלפו.`)) return;
+    state={settings:Object.assign({},defaults.settings,d.settings||{},{bank1000:true}),picks:d.picks}; save(); loadSettingsForm(); renderAll(); toast('יובא בהצלחה');
+  }catch(err){ toast('ייבוא נכשל: '+err.message); }
+  e.target.value='';
+};
+$('#resetAll').onclick=()=>{
+  if(!confirm('למחוק את כל הבחירות וההגדרות? מומלץ לייצא גיבוי קודם.')) return;
+  state=structuredClone(defaults); save(); loadSettingsForm(); renderAll(); if(curGames.length) renderGames();
+};
+
+/* ===================== nav ===================== */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main > section').forEach(s=>s.classList.toggle('hidden', s.id!=='tab-'+b.dataset.tab));
+  if(b.dataset.tab!=='games'){ sel=null; renderSlip(); }
+});
+const shift=n=>{ curDate=new Date(curDate.getFullYear(),curDate.getMonth(),curDate.getDate()+n); sel=null; renderSlip(); loadGames(); };
+$('#prevDay').onclick=()=>shift(-1);
+$('#nextDay').onclick=()=>shift(1);
+$('#todayBtn').onclick=()=>{ curDate=easternToday(); sel=null; renderSlip(); loadGames(); };
+$('#refreshBtn').onclick=()=>{ loadGames(); settlePending(); };
+$('#datePick').onchange=e=>{ if(e.target.value){ curDate=parseIso(e.target.value); sel=null; renderSlip(); loadGames(); } };
+
+function renderAll(){ renderHeader(); renderPicks(); renderStats(); }
+
+/* ===================== init ===================== */
+loadSettingsForm(); renderAll(); loadGames(); settlePending();
+setInterval(()=>{ if(!document.hidden){ loadGames(true); settlePending(); } }, 120000);
+</script>
+</body>
+</html>
